@@ -18,7 +18,8 @@ const Summarizer = () => {
         setSummary('');
 
         try {
-            const response = await fetch('http://localhost:3000/summarize', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${apiUrl}/summarize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,8 +97,8 @@ const Summarizer = () => {
                         onClick={handleSummarize}
                         disabled={loading || !inputText}
                         className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center space-x-2 transition-all duration-300 ${loading || !inputText
-                                ? 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
-                                : 'btn-gradient'
+                            ? 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
+                            : 'btn-gradient'
                             }`}
                     >
                         {loading ? (

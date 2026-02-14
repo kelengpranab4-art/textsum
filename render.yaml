@@ -1,0 +1,27 @@
+services:
+  # Backend Service
+  - type: web
+    name: textsum-api
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node index.js
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: "*"
+    envVars:
+      - key: PORT
+        value: 10000
+
+  # Frontend Service
+  - type: web
+    name: textsum-web
+    env: static
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: textsum-api
+          property: url
