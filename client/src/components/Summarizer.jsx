@@ -10,34 +10,50 @@ const Summarizer = () => {
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
 
-    const handleSummarize = async () => {
-        if (!inputText.trim()) return;
+    // Create user reference to worker
+    const worker = React.useRef(null);
 
+    React.useEffect(() => {
+        if (!worker.current) {
+            // Create the worker
+            worker.current = new Worker(new URL('../worker.js', import.meta.url), {
+                type: 'module'
+            });
+        }
+
+        const onMessageReceived = (e) => {
+            switch (e.data.status) {
+                case 'initiate':
+                    setLoading(true);
+                    break;
+                case 'progress':
+                    // Optional: handle progress
+                    break;
+                case 'complete':
+                    setSummary(e.data.output);
+                    setLoading(false);
+                    break;
+                case 'error':
+                    setError(e.data.error);
+                    setLoading(false);
+                    break;
+            }
+        };
+
+        // Attach the callback function as an event listener.
+        worker.current.addEventListener('message', onMessageReceived);
+
+        // Cleanup function when the component unmounts
+        return () => worker.current.removeEventListener('message', onMessageReceived);
+    }, []);
+
+    const handleSummarize = () => {
+        if (!inputText.trim()) return;
         setLoading(true);
         setError('');
         setSummary('');
-
-        try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-            const response = await fetch(`${apiUrl}/summarize`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: inputText }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch summary');
-            }
-
-            const data = await response.json();
-            setSummary(data.summary);
-        } catch (err) {
-            setError('An error occurred while summarizing. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        // Send the text to the worker
+        worker.current.postMessage({ text: inputText });
     };
 
     const copyToClipboard = () => {
